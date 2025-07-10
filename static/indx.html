@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>🌦️ Weather Assistant</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to right, #cceeff, #e0f7fa);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px;
+    }
+
+    h1 {
+      color: #0077b6;
+    }
+
+    .weather-form {
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      width: 300px;
+    }
+
+    input[type="number"] {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #bbb;
+      border-radius: 5px;
+    }
+
+    button {
+      width: 100%;
+      background: #0077b6;
+      color: white;
+      padding: 10px;
+      margin-top: 10px;
+      border: none;
+      border-radius: 5px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #005f87;
+    }
+
+    .result {
+      margin-top: 20px;
+      font-size: 16px;
+    }
+
+    .error {
+      color: red;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🌦️ Weather Assistant</h1>
+
+  <div class="weather-form">
+    <label for="lat">Latitude:</label>
+    <input type="number" step="any" id="lat" placeholder="e.g. 28.6139">
+
+    <label for="lon">Longitude:</label>
+    <input type="number" step="any" id="lon" placeholder="e.g. 77.2090">
+
+    <button onclick="getWeather()">Get Weather</button>
+    <button onclick="useMyLocation()">📍 Use My Location</button>
+
+    <div class="result" id="result"></div>
+  </div>
+
+  <script>
+    async function getWeather(lat = null, lon = null) {
+      const resultDiv = document.getElementById('result');
+
+      // Use input values if lat/lon not provided as arguments
+      if (!lat || !lon) {
+        lat = document.getElementById('lat').value;
+        lon = document.getElementById('lon').value;
+      }
+
+      if (!lat || !lon) {
+        resultDiv.innerHTML = "<p class='error'>❌ Please enter both latitude and longitude or use your current location.</p>";
+        return;
+      }
+
+      try {
+        const response = await fetch('/weather', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ lat, lon })
+        });
+
+        const data = await response.json();
+
+        if (data.error) {
+          resultDiv.innerHTML = `<p class="error">❌ ${data.error}</p>`;
+        } else {
+          resultDiv.innerHTML = `
+            <p>📍 Location: (${lat}, ${lon})</p>
+            <p>☁️ Condition: ${data.weather} (${data.description})</p>
+            <p>🌡️ Temperature: ${data.temperature}°C</p>
+            <p>🌧️ Rainfall (last hour): ${data.rainfall} mm</p>
+            <p>💧 Humidity: ${data.humidity}%</p>
+          `;
+        }
+      } catch (error) {
+        resultDiv.innerHTML = `<p class="error">❌ Failed to fetch weather. Is the backend running?</p>`;
+      }
+    }
+
+    function useMyLocation() {
+      const resultDiv = document.getElementById('result');
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+
+            // Fill the input fields as well
+            document.getElementById('lat').value = lat;
+            document.getElementById('lon').value = lon;
+
+            getWeather(lat, lon);
+          },
+          (error) => {
+            let msg = "❌ Location error: ";
+            switch(error.code) {
+              case error.PERMISSION_DENIED:
+                msg += "Permission denied.";
+                break;
+              case error.POSITION_UNAVAILABLE:
+                msg += "Position unavailable.";
+                break;
+              case error.TIMEOUT:
+                msg += "Request timed out.";
+                break;
+              default:
+                msg += "Unknown error.";
+            }
+            resultDiv.innerHTML = `<p class="error">${msg}</p>`;
+          }
+        );
+      } else {
+        resultDiv.innerHTML = "<p class='error'>❌ Geolocation is not supported by this browser.</p>";
+      }
+    }
+  </script>
+
+</body>
+</html>

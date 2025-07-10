@@ -6,7 +6,7 @@ import os
 app = Flask(__name__, static_folder='static', static_url_path='')
 CORS(app)
 
-API_KEY = "2da4bed36c667a36e02278fa2d001b5d"  # Replace with your actual API key
+API_KEY = "your api key here"  # Replace with your actual API key
 
 @app.route('/')
 def serve_index():
